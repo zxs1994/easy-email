@@ -8,11 +8,13 @@ export default defineConfig({
   resolve: {
     alias: {
       '@demo': path.resolve(__dirname, './src'),
-      react: path.resolve('./node_modules/react'),
-      'react-final-form': path.resolve(
-        __dirname,
-        './node_modules/react-final-form'
-      ),
+      'easy-email-extensions': path.resolve(__dirname, './src/packages/easy-email-extensions'),
+      'easy-email-core': path.resolve(__dirname, './src/packages/easy-email-core'),
+      'easy-email-editor': path.resolve(__dirname, './src/packages/easy-email-editor'),
+
+      '@extensions': path.resolve(__dirname, './src/packages/easy-email-extensions'),
+      '@core': path.resolve(__dirname, './src/packages/easy-email-core'),
+      '@': path.resolve(__dirname, './src/packages/easy-email-editor'),
     },
   },
   optimizeDeps: {},
@@ -20,7 +22,7 @@ export default defineConfig({
   build: {
     minify: true,
     manifest: true,
-    sourcemap: true,
+    sourcemap: false,
     target: 'es2015',
     rollupOptions: {
       output: {

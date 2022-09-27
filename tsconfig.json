@@ -22,8 +22,17 @@
     "paths": {
       "@demo": ["src"],
       "@demo/*": ["src/*"],
+      "easy-email-editor": ["src/packages/easy-email-editor"],
+      "easy-email-core": ["src/packages/easy-email-core"],
+      "easy-email-extensions": ["src/packages/easy-email-extensions"],
+      "@": ["src/packages/easy-email-editor"],
+      "@/*": ["src/packages/easy-email-editor/*"],
+      "@core": ["src/packages/easy-email-core"],
+      "@core/*": ["src/packages/easy-email-core/*"],
+      "@extensions": ["src/packages/easy-email-extensions"],
+      "@extensions/*": ["src/packages/easy-email-extensions/*"]
     }
   },
-  "include": ["./src", "./example", "./typings", "env.d.ts"],
+  "include": ["./src", "./example", "./typings", "./env.d.ts"],
   "exclude": ["node_modules"]
 }
