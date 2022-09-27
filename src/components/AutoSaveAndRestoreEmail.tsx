@@ -10,7 +10,7 @@ import { useQuery } from '@demo/hooks/useQuery';
 export function AutoSaveAndRestoreEmail() {
   const formState = useFormState<any>();
   const { reset, mutators } = useForm();
-  const { id = 'new' } = useQuery<{ id: string }>();
+  const { id = 'new' } = useQuery<{ id: string; }>();
 
   const [currentEmail, setCurrentEmail] =
     useLocalStorage<IEmailTemplate | null>(id, null);

@@ -5,12 +5,13 @@ import Page from '@demo/components/Page';
 import store from '@demo/store';
 import '@demo/styles/common.scss';
 import { history } from './utils/history';
-import Home from '@demo/pages/Home';
+// import Home from '@demo/pages/Home';
 
 const Editor = React.lazy(() => import('@demo/pages/Editor'));
 
 function App() {
   return (
+    //Provider 解决组件中的数据传输，
     <Provider store={store}>
       <Page>
         <Suspense
@@ -42,8 +43,9 @@ function App() {
         >
           <Router history={history}>
             <Switch>
-              <Route path='/' exact component={Home} />
-              <Route path='/editor' component={Editor} />
+              <Route path='/' exact component={Editor} />
+              {/* <Route path='/' exact component={Home} />
+              <Route path='/editor' exact component={Editor} /> */}
             </Switch>
           </Router>
         </Suspense>

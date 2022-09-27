@@ -14,11 +14,12 @@ export default function Home() {
   const dispatch = useDispatch();
   const list = useAppSelector('templateList');
 
-  useEffect(() => {
-    dispatch(templateList.actions.fetch(undefined));
-  }, [dispatch]);
+  // useEffect(() => {
+  //   dispatch(templateList.actions.fetch(undefined));
+  // }, [dispatch]);
 
   return (
+    // Button 首页的添加链接
     <Frame
       title='Templates'
       primaryAction={
@@ -32,13 +33,13 @@ export default function Home() {
         </Button>
       }
     >
-      <>
-        <Stack>
-          {[...templates, ...list].map((item) => (
-            <CardItem data={item} key={item.article_id} />
-          ))}
-        </Stack>
-      </>
+      {/* 列表 */}
+      <Stack>
+        {[...templates, ...list].map((item) => (
+          <CardItem data={item} key={item.article_id} />
+        ))}
+      </Stack>
+
     </Frame>
   );
 }

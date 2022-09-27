@@ -7,8 +7,13 @@ import { IBlockData, BlockManager, BasicType } from 'easy-email-core';
 import { IEmailTemplate } from 'easy-email-editor';
 import { getTemplate } from '@demo/config/getTemplate';
 
-export function getAdaptor(data: IArticle): IEmailTemplate {
-  const content = JSON.parse(data.content.content) as IBlockData;
+export function getAdaptor(data): IEmailTemplate {
+  let content;
+  if (typeof data.content === 'string') {
+    content = JSON.parse(data.content) as IBlockData;
+  } else {
+    content = data.content as IBlockData;
+  }
   return {
     ...data,
     content,
@@ -26,22 +31,45 @@ export default createSliceState({
     },
   },
   effects: {
+    // fetchById: async (
+    //   state,
+    //   {
+    //     id,
+    //     userId,
+    //   }: {
+    //     id: number;
+    //     userId: number;
+    //   }
+    // ) => {
+    //   try {
+    //     let data = await getTemplate(id);
+    //     if (!data) {
+    //       data = await article.getArticle(id, userId);
+    //     }
+    //     return getAdaptor(data);
+    //   } catch (error) {
+    //     history.replace('/');
+    //     throw error;
+    //   }
+    // },
     fetchById: async (
       state,
       {
-        id,
-        userId,
+        id, type
       }: {
-        id: number;
-        userId: number;
+        id: string;
+        type: number;
       }
     ) => {
       try {
-        let data = await getTemplate(id);
-        if (!data) {
-          data = await article.getArticle(id, userId);
+        let data: any;
+        if (type == 2) {
+          data = await article.getArticle(id);
+        } else {
+          data = await article.getMyLandingPage(id);
         }
-        return getAdaptor(data);
+
+        return getAdaptor(data.result);
       } catch (error) {
         history.replace('/');
         throw error;
@@ -54,21 +82,56 @@ export default createSliceState({
         content: BlockManager.getBlockByType(BasicType.PAGE).create({}),
       } as IEmailTemplate;
     },
+    // create: async (
+    //   state,
+    //   payload: {
+    //     template: IEmailTemplate;
+    //     success: (id: number, data: IEmailTemplate) => void;
+    //   }
+    // ) => {
+    //   const picture = await emailToImage(payload.template.content);
+    //   const data = await article.addArticle({
+    //     picture,
+    //     summary: payload.template.subTitle,
+    //     title: payload.template.subject,
+    //     content: JSON.stringify(payload.template.content),
+    //   });
+    //   payload.success(data.article_id, getAdaptor(data));
+    //   return { ...data, ...payload.template };
+    // },
     create: async (
       state,
       payload: {
         template: IEmailTemplate;
-        success: (id: number, data: IEmailTemplate) => void;
+        type: number;
+        landingPageId: string,
+        success: (id: string, data: IEmailTemplate) => void;
       }
     ) => {
-      const picture = await emailToImage(payload.template.content);
-      const data = await article.addArticle({
-        picture,
+      // const picture = await emailToImage(payload.template.content);
+      let html = window.btoa(unescape(encodeURIComponent(payload.template.html)));
+      let mjml = window.btoa(unescape(encodeURIComponent(payload.template.mjml)));
+      let b = {
+        // picture,
         summary: payload.template.subTitle,
         title: payload.template.subject,
         content: JSON.stringify(payload.template.content),
-      });
-      payload.success(data.article_id, getAdaptor(data));
+        html,
+        mjml,
+        landingPageId: payload.landingPageId
+      };
+      // console.log(b, null, 1);
+      let data: any;
+      if (payload.type == 2) {
+        data = await article.addSystemLandingPage(b);
+      } else {
+        data = await article.saveAsLandingPage(b);
+      }
+      if (data.code != 0) {
+        alert(data.msg);
+      } else {
+        payload.success(data.result.templateId, getAdaptor(b));
+      }
       return { ...data, ...payload.template };
     },
     duplicate: async (
@@ -96,26 +159,46 @@ export default createSliceState({
     updateById: async (
       state,
       payload: {
-        id: number;
+        id: string;
+        type: number;
         template: IEmailTemplate;
         success: (templateId: number) => void;
       }
     ) => {
       try {
-        let isDefaultTemplate = await getTemplate(payload.id);
-        if (isDefaultTemplate) {
-          Message.error('Cannot change the default template');
-          return;
-        }
+        // let isDefaultTemplate = await getTemplate(payload.id);
+        // if (isDefaultTemplate) {
+        //   Message.error('Cannot change the default template');
+        //   return;
+        // }
 
-        const picture = await emailToImage(payload.template.content);
-        await article.updateArticle(payload.id, {
-          picture,
-          content: JSON.stringify(payload.template.content),
-          title: payload.template.subject,
+        // const picture = await emailToImage(payload.template.content);
+
+
+        let html = window.btoa(unescape(encodeURIComponent(payload.template.html)));
+        let mjml = window.btoa(unescape(encodeURIComponent(payload.template.mjml)));
+        let b = {
+          // picture,
           summary: payload.template.subTitle,
-        });
-        payload.success(payload.id);
+          title: payload.template.subject,
+          content: JSON.stringify(payload.template.content),
+          html,
+          mjml,
+          templateId: payload.id
+        };
+        // console.log(b, null, 1);
+        let data: any;
+        console.log(payload.type);
+        if (payload.type == 2) {
+          data = await article.editSystemLandingPage(b);
+        } else {
+          data = await article.editMyLandingPage(b);
+        }
+        if (data.code === -1) {
+          alert(data.msg);
+        } else {
+          payload.success(payload.id);
+        }
       } catch (error: any) {
         if (error?.response?.status === 404) {
           throw {

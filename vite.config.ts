@@ -11,31 +11,14 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      // 'easy-email-editor/lib/style.css': path.resolve(
-      //   __dirname,
-      //   'package.json'
-      // ), // 没有用的，只是防止css 404报错
-      // 'easy-email-extensions/lib/style.css': path.resolve(
-      //   __dirname,
-      //   'package.json'
-      // ), // 没有用的，只是防止css 404报错
-      react: path.resolve('./node_modules/react'),
-      'react-final-form': path.resolve(
-        __dirname,
-        './node_modules/react-final-form'
-      ),
       '@demo': path.resolve(__dirname, './src'),
-      '@extensions': path.resolve('./node_modules/easy-email-extensions/src'),
-      '@core': path.resolve('./node_modules/easy-email-core/src'),
-      '@arco-themes': path.resolve('./node_modules/@arco-themes'),
-      '@': path.resolve('./node_modules/easy-email-editor/src'),
-      '@arco-design/web-react/dist/css/arco.css': path.resolve(
-        './node_modules/@arco-design/web-react/dist/css/arco.css'
-      ),
+      // '@extensions': path.resolve('./node_modules/easy-email-extensions'),
+      // '@core': path.resolve('./node_modules/easy-email-core'),
+      '@': path.resolve('./node_modules/easy-email-editor'),
     },
   },
 
-  define: {},
+  define: { 'process.env': {haha: 123} }, // 放一些全局变量
   esbuild: {
     jsxInject: 'import "@arco-design/web-react/dist/css/arco.css";',
   },
@@ -83,4 +66,5 @@ export default defineConfig({
       },
     }),
   ].filter(Boolean),
+  base: './'
 });

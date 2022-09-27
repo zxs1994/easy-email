@@ -1,8 +1,8 @@
 import axios, { AxiosResponse, AxiosRequestConfig } from 'axios';
 import { UserStorage } from '@demo/utils/user-storage';
-
+console.log(import.meta.env.VITE_BASE_API)
 export const axiosInstance = axios.create({
-  baseURL: 'https://www.maocanhua.cn',
+  baseURL: import.meta.env.VITE_BASE_API,
 });
 
 axiosInstance.interceptors.request.use(async function (config) {
@@ -11,7 +11,8 @@ axiosInstance.interceptors.request.use(async function (config) {
     if (!config.headers) {
       config.headers = {};
     }
-    config.headers.authorization = token;
+    // config.headers.token = token || '';
+    config.headers.token = localStorage.getItem('token') || '';
   } catch (error) {
     // window.location.assign(LOGIN_ADDRESS);
   } finally {

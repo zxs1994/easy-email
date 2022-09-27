@@ -1,16 +1,17 @@
 import { request } from './axios.config';
-import axios from 'axios';
 
-const CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/dfite2e16/image/upload';
+const CLOUDINARY_URL = import.meta.env.VITE_BASE_API + '/api/v2/dtc/schedule/systemUploadPic'; //图片上传地址
 
 export const common = {
   async uploadByQiniu(file: File | Blob): Promise<string> {
+    console.log(file);
     const data = new FormData();
-    data.append('file', file);
-    data.append('upload_preset', 'p06udqtq');
+    data.append('uploadPic', file);
+    data.append('extName', file.type.split('/')[1]);
 
-    const res = await axios.post<{ url: string }>(CLOUDINARY_URL, data);
-    return res.data.url;
+    const res: any = await request.post<string>(CLOUDINARY_URL, data);
+
+    return res.result;
   },
   uploadByUrl(url: string) {
     return request.get<string>('/upload/user/upload-by-url', {

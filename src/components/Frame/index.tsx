@@ -4,7 +4,7 @@ import { Stack } from '../Stack';
 import { pushEvent } from '@demo/utils/pushEvent';
 import { githubButtonGenerate } from '@demo/utils/githubButtonGenerate';
 
-const { SubMenu } = Menu;
+const { SubMenu } = Menu;  //侧边栏目录
 const { Header, Content, Sider } = Layout;
 
 interface FrameProps {
@@ -26,6 +26,7 @@ export default function Frame({
 
   return (
     <Layout>
+      {/* 顶部栏 */}
       <Header style={{ padding: '0 20px', backgroundColor: '#001529' }}>
         <Stack distribution='equalSpacing' alignment='center'>
           <h1 style={{ color: 'white', margin: '15px 0' }}>Easy-email</h1>

@@ -21,6 +21,7 @@ export function getCookie(key: string) {
       value = item.replace(`${name}=`, '');
     }
   });
+
   return value;
 }
 

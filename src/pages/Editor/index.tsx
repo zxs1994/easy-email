@@ -19,9 +19,14 @@ import {
   EmailEditor,
   EmailEditorProvider,
   EmailEditorProviderProps,
-  IEmailTemplate,
 } from 'easy-email-editor';
-
+import { IPage } from 'easy-email-core';
+export interface IEmailTemplate {
+  content: IPage;
+  subject: string;
+  subTitle: string;
+  templateId: string;
+}
 import { Stack } from '@demo/components/Stack';
 import { pushEvent } from '@demo/utils/pushEvent';
 import { FormApi } from 'final-form';
@@ -51,6 +56,8 @@ import { testMergeTags } from './testMergeTags';
 import { useMergeTagsModal } from './components/useMergeTagsModal';
 
 import { useWindowSize } from 'react-use';
+import { article } from '../../services/article';
+import { json } from 'stream/consumers';
 
 const socialIcons = [
   {
@@ -170,7 +177,7 @@ export default function Editor() {
   const smallScene = width < 1400;
 
   const { openModal, modal } = useEmailModal();
-  const { id, userId } = useQuery();
+  const { id, type, token, perationtype } = useQuery();
   const loading = useLoading(template.loadings.fetchById);
   const {
     modal: mergeTagsModal,
@@ -193,15 +200,12 @@ export default function Editor() {
     }
   }, [collectionCategory]);
 
+  // 渲染模板内容
   useEffect(() => {
+    // id 模板id
+    if (token) { localStorage.setItem('token', token); }
     if (id) {
-      if (!userId) {
-        UserStorage.getAccount().then(account => {
-          dispatch(template.actions.fetchById({ id: +id, userId: account.user_id }));
-        });
-      } else {
-        dispatch(template.actions.fetchById({ id: +id, userId: +userId }));
-      }
+      dispatch(template.actions.fetchById({ id, type }));
     } else {
       dispatch(template.actions.fetchDefaultTemplate(undefined));
     }
@@ -209,7 +213,7 @@ export default function Editor() {
     return () => {
       dispatch(template.actions.set(null));
     };
-  }, [dispatch, id, userId]);
+  }, [dispatch, id, type]);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -241,7 +245,10 @@ export default function Editor() {
   }, []);
 
   const onExportHtml = (values: IEmailTemplate) => {
-    pushEvent({ event: 'HtmlExport' });
+    // pushEvent({ event: 'HtmlExport' });
+    console.log(values);
+
+    // // html
     const html = mjml(
       JsonToMjml({
         data: values.content,
@@ -254,22 +261,38 @@ export default function Editor() {
         validationLevel: 'soft',
       },
     ).html;
+    // const saveData = (() => {
+    //   var a = document.createElement("a");
+    //   document.body.appendChild(a);
+    //   // a.style = "display: none";
+    //   return function (data, fileName) {
+    //     const json = data,
+    //       blob = new Blob([json], { type: "octet/stream" }),
+    //       url = window.URL.createObjectURL(blob);
+    //     a.href = url;
+    //     a.download = fileName;
+    //     a.click();
+    //     window.URL.revokeObjectURL(url);
+    //   };
+    // })();
+    // saveData(html, '落地页.html');
 
-    copy(html);
+    // copy(html);
     Message.success('Copied to pasteboard!');
   };
 
   const onExportMJML = (values: IEmailTemplate) => {
-    const html = JsonToMjml({
-      data: values.content,
-      mode: 'production',
-      context: values.content,
-      dataSource: mergeTags,
-    });
-
-    copy(html);
-    pushEvent({ event: 'MJMLExport', payload: { values, mergeTags } });
-    Message.success('Copied to pasteboard!');
+    console.log(values);
+    // const html = JsonToMjml({
+    //   data: values.content,
+    //   mode: 'production',
+    //   context: values.content,
+    //   dataSource: mergeTags,
+    // });
+    // console.log(html);
+    // copy(html);
+    // pushEvent({ event: 'MJMLExport', payload: { values, mergeTags } });
+    // Message.success('Copied to pasteboard!');
   };
 
   const initialValues: IEmailTemplate | null = useMemo(() => {
@@ -281,48 +304,244 @@ export default function Editor() {
     };
   }, [templateData]);
 
+  // async function replaceAHref(htmlStr) {
+  //   const dom = new DOMParser().parseFromString(htmlStr, 'text/html');
+  //   const aList = dom.querySelectorAll('a');
+  //   const promiseArr = [];
+  //   for (let i = 0; i < aList.length; i++) {
+  //     let p = api({ url: aList[i].href });
+  //     promiseArr.push(p);
+  //     p.then((res: any) => {
+  //       aList[i].href = res;
+  //     });
+  //   }
+  //   await Promise.all(promiseArr);
+  //   return dom.documentElement.outerHTML;
+  // }
+
+  async function format(info, id) {
+    const promisArr: any[] = [];
+    function recursionReplaceHref(info) {
+      const attributes = info.attributes || {};
+      console.log(attributes.href);
+      if (attributes.href || attributes.href == '') { // 常规替换
+        // console.log(attributes.href);
+        if (attributes.href) {
+          const p = article.getShortUrl({
+            longURL: attributes.href,
+            id,
+            type: 'LANDINGPAGE'
+          });
+          promisArr.push(p);
+          p.then(res => attributes.href = res);
+        }
+      }
+      if (info.type === 'advanced_social') { // 这个类型单独处理
+        const elements = info.data?.value?.elements || [];
+        console.log(2);
+        elements.forEach(i => {
+          const p = article.getShortUrl({
+            longURL: i.href,
+            id,
+            type: 'LANDINGPAGE'
+          });
+          promisArr.push(p);
+          p.then(res => i.href = res);
+        });
+      }
+      if (/text/.test(info.type)) { // text里面可能会有a标签
+        let content = info.data?.value?.content || '';
+        const urlList = content.match(/(?<=href=")http[s?]\:\/\/\S+(?=")/igm); // null 或 数组
+        // console.log(urlList)
+        if (!urlList) return;
+        const promisArr1: any[] = [];
+        urlList.forEach((v, i) => {
+          const p = article.getShortUrl({
+            longURL: v,
+            id,
+            type: 'LANDINGPAGE'
+          });
+          promisArr.push(p);
+          promisArr1.push(p);
+        });
+        Promise.all(promisArr1).then(res => { // Promise.all 会保证顺序, 数组的顺序
+          const newUrlList = res.map(i => i.url);
+          // console.log(newUrlList)
+          // 根据链接分割成数组, 每一项后加加上替换好的链接, 再转成字符串
+          info.data.value.content = content.split(/(?<=href=")http[s?]\:\/\/\S+(?=")/igm).map((val, idx) => val + newUrlList[idx] || '').join('');
+        });
+      }
+      if (info.children && info.children.length) { // 递归
+        info.children.forEach(i => {
+          recursionReplaceHref(i);
+        });
+      }
+    };
+    recursionReplaceHref(info);
+    await Promise.all(promisArr);
+    return info;
+  }
+
+  console.log(initialValues);
+  // // 链接替换
+  // const api = async function (href) {
+  //   return new Promise((resole, reject) => {
+  //     request.get(`/api/v2/dtc/easy-mail/getShortUrl?longURL=${href}`).then((res: any) => {
+  //       if (res.result.code === 200) {
+  //         resole(res.result.data);
+  //       } else {
+  //         alert(res.result.msg + href);
+  //         reject();
+  //       }
+  //     }).catch(res => {
+  //       resole('123');
+  //     });
+  //   });
+  //   // return ;
+  // };
+  // 引用   referencetype  copy  另存为    reference 引用
+  const reference = async (values, referencetype) => {
+    const con = confirm('确认保存主题？');
+    if (con == true) {
+      let content = JSON.parse(JSON.stringify(values.content));
+      let landingPageId = (await article.getId()).result;
+      format(content, landingPageId).then(data => {
+        // mjml
+        values.mjml = JsonToMjml({
+          data,
+          mode: 'production',
+          context: values.content,
+          dataSource: mergeTags,
+        });
+        // html
+        values.html = mjml(
+          JsonToMjml({
+            data,
+            mode: 'production',
+            context: values.content,
+            dataSource: mergeTags,
+          }),
+          {
+            beautify: true,
+            validationLevel: 'soft',
+          },
+        ).html;
+
+        let html = window.btoa(unescape(encodeURIComponent(values.html)));
+        let mj = window.btoa(unescape(encodeURIComponent(values.mjml)));
+        let b = {
+          // picture,
+          summary: values.subTitle,
+          title: values.subject,
+          content: JSON.stringify(values.content),
+          html,
+          mjml: mj,
+          originalLandingPageId: id,
+          landingPageId,
+        };
+        // 两种类型不同的添加
+        if (referencetype == 'reference') {
+          // 推荐主题
+          article.addLandingPage(b).then((res: any) => {
+            if (res.code === 0) {
+              Message.success('引用成功!');
+              history.replace(`/?id=${res.result.templateId}&type=1`);
+            } else {
+              alert(res.msg);
+            }
+          });
+        } else {
+          // 我的主题
+          article.saveAsLandingPage(b).then((res: any) => {
+            if (res.code === 0) {
+              Message.success('存储成功!');
+              history.replace(`/?id=${res.result.templateId}&type=${type}`);
+            } else {
+              alert(res.msg);
+            }
+          });
+        }
+
+      });
+    }
+  };
+
+  // 保存
   const onSubmit = useCallback(
     async (
-      values: IEmailTemplate,
+      values,
       form: FormApi<IEmailTemplate, Partial<IEmailTemplate>>,
     ) => {
-      pushEvent({ event: 'EmailSave' });
-      if (id) {
-        const isChanged = !(
-          isEqual(initialValues?.content, values.content) &&
-          isEqual(initialValues?.subTitle, values?.subTitle) &&
-          isEqual(initialValues?.subject, values?.subject)
-        );
-
-        if (!isChanged) {
-          Message.success('Updated success!');
-          form.restart(values);
-          return;
-        }
-        dispatch(
-          template.actions.updateById({
-            id: +id,
-            template: values,
-            success() {
-              Message.success('Updated success!');
-              form.restart(values);
-            },
-          }),
-        );
-      } else {
-        dispatch(
-          template.actions.create({
-            template: values,
-            success(id, newTemplate) {
-              Message.success('Saved success!');
-              form.restart(newTemplate);
-              history.replace(`/editor?id=${id}`);
-            },
-          }),
-        );
+      const con = confirm('确认保存主题？');
+      let content = JSON.parse(JSON.stringify(values.content));
+      let landingPageId;
+      if (!id) {
+        landingPageId = (await article.getId()).result;
       }
+      if (con == true) {
+        format(content, landingPageId).then(data => {
+          // mjml
+          values.mjml = JsonToMjml({
+            data,
+            mode: 'production',
+            context: values.content,
+            dataSource: mergeTags,
+          });
+          // html
+          values.html = mjml(
+            JsonToMjml({
+              data,
+              mode: 'production',
+              context: values.content,
+              dataSource: mergeTags,
+            }),
+            {
+              beautify: true,
+              validationLevel: 'soft',
+            },
+          ).html;
+
+          if (id) {
+            // 修改
+            console.log(id);
+            dispatch(
+              template.actions.updateById({
+                id,
+                type,
+                template: values,
+                success() {
+                  Message.success('修改成功!');
+                  form.restart(values);
+                },
+              }),
+            );
+          } else {
+            // 新增
+            dispatch(
+              template.actions.create({
+                template: values,
+                type,
+                landingPageId,
+                success(id, newTemplate) {
+                  Message.success('保存成功!');
+                  form.restart(newTemplate);
+                  history.replace(`/?id=${id}&type=${type}`);
+                },
+              }),
+            );
+          }
+        });
+      }
+
+
+      // console.log(values);
+
+
+      // pushEvent({ event: 'EmailSave' });
+
+
     },
-    [dispatch, history, id, initialValues],
+    [dispatch, history, type, id, initialValues],
   );
 
   const onBeforePreview: EmailEditorProviderProps['onBeforePreview'] = useCallback(
@@ -379,11 +598,13 @@ export default function Editor() {
         {({ values }, { submit }) => {
           return (
             <>
+              {/*头部的各种按钮  */}
+              {/*  backIcon
+                title='Edit'
+                onBack={() => history.push('/')} */}
               <PageHeader
                 style={{ background: 'var(--color-bg-2)' }}
-                backIcon
-                title='Edit'
-                onBack={() => history.push('/')}
+
                 extra={
                   <Stack alignment='center'>
                     <Button
@@ -402,23 +623,32 @@ export default function Editor() {
                       <Select.Option value='purple'>Purple</Select.Option>
                     </Select>
 
-                    <Button onClick={openMergeTagsModal}>Update mergeTags</Button>
+                    {/* <Button onClick={openMergeTagsModal}>Update mergeTags</Button>
 
                     <Button onClick={() => onExportMJML(values)}>Export MJML</Button>
 
-                    <Button onClick={() => onExportHtml(values)}>Export html</Button>
-
-                    <Button onClick={() => openModal(values, mergeTags)}>
-                      Send test email
+                    <Button onClick={() => onExportHtml(values)}>保存</Button>
+*/}
+                    {/* <Button onClick={() => reference(values, 'reference')} style={{ display: type == 2 ? '' : 'none' }}>
+                      引用
+                    </Button> */}
+                    {/* perationtype check 查看按钮
+                        type  1  我的主题   2 推荐主题
+                    */}
+                    <Button onClick={() => reference(values, 'copy')} style={{ display: (perationtype == 'check') && (type == 1) ? '' : 'none' }}>
+                      另存为
                     </Button>
-                    <Button
+                    <Button onClick={() => reference(values, 'copy')} style={{ display: (perationtype == 'check') && (type == 2) ? '' : 'none' }}>
+                      引用
+                    </Button>
+                    <Button style={{ display: perationtype != 'check' ? '' : 'none' }}
                       loading={isSubmitting}
                       type='primary'
                       onClick={() => submit()}
                     >
-                      Save
+                      保存
                     </Button>
-                    <a
+                    {/* <a
                       target='_blank'
                       href='https://github.com/m-Ryan/easy-email'
                       style={{
@@ -435,14 +665,15 @@ export default function Editor() {
                       onClick={() => pushEvent({ event: 'Github' })}
                     >
                       <IconGithub />
-                    </a>
+                    </a> */}
                   </Stack>
                 }
               />
+              {/* StandardLayout 图形化设置编辑  EmailEditor 中间的内容*/}
               <StandardLayout compact={!smallScene}>
                 <EmailEditor />
               </StandardLayout>
-              <AutoSaveAndRestoreEmail />
+              {/* <AutoSaveAndRestoreEmail /> */}
             </>
           );
         }}
@@ -475,4 +706,4 @@ function replaceStandardBlockToAdvancedBlock(blockData: IBlockData) {
   }
   blockData.children.forEach(replaceStandardBlockToAdvancedBlock);
   return blockData;
-}
+};
