@@ -358,7 +358,7 @@ const heroList = [
             'padding-top': '30px',
             src: getImg('IMAGE_37'),
             target: '_blank',
-            href: 'https://easy-email-m-ryan.vercel.app/',
+            href: '',
           },
           data: {
             value: {

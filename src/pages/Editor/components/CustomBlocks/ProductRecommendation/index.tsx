@@ -33,7 +33,7 @@ const productPlaceholder = {
     'https://assets.maocanhua.cn/8e0e07e2-3f84-4426-84c1-2add355c558b-image.png',
   title: 'Red Flock Buckle Winter Boots',
   price: '$59.99 HKD',
-  url: 'https://easy-email-m-ryan.vercel.app',
+  url: '',
 };
 
 export const ProductRecommendation = createCustomBlock<IProductRecommendation>({
