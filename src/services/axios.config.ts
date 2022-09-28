@@ -1,6 +1,7 @@
 import axios, { AxiosResponse, AxiosRequestConfig } from 'axios';
 import { UserStorage } from '@demo/utils/user-storage';
-console.log(import.meta.env.VITE_BASE_API)
+import { Message } from '@arco-design/web-react';
+// console.log(import.meta.env.VITE_BASE_API)
 export const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_BASE_API,
 });
@@ -23,6 +24,11 @@ axiosInstance.interceptors.request.use(async function (config) {
 axiosInstance.interceptors.response.use(
   function <T>(res: AxiosResponse<T>) {
     return new Promise((resolve, reject) => {
+      // console.log(res)
+      const data:any = res.data || {}
+      if (!/^(0|200)$/.test(data.code)) {
+        Message.warning(data.msg)
+      }
       return resolve(res);
     });
   },

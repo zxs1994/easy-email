@@ -1,6 +1,6 @@
 import { request } from './axios.config';
 
-const CLOUDINARY_URL = import.meta.env.VITE_BASE_API + '/api/v2/dtc/schedule/systemUploadPic'; //图片上传地址
+const CLOUDINARY_URL = '/api/v2/dtc/schedule/systemUploadPic'; //图片上传地址
 
 export const common = {
   async uploadByQiniu(file: File | Blob): Promise<string> {

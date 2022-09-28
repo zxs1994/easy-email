@@ -177,7 +177,9 @@ export default function Editor() {
   const smallScene = width < 1400;
 
   const { openModal, modal } = useEmailModal();
+
   const { id, type, token, perationtype } = useQuery();
+
   const loading = useLoading(template.loadings.fetchById);
   const {
     modal: mergeTagsModal,
