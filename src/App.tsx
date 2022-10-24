@@ -26,8 +26,8 @@ function App() {
               }}
             >
               <img
-                width='200px'
-                src='https://assets.maocanhua.cn/Fj1gmWbF-aY3ZnPyrTrDge6atRnm'
+                width='150px'
+                src='/images/Fj1gmWbF-aY3ZnPyrTrDge6atRnm.svg'
                 alt=''
               />
               <p

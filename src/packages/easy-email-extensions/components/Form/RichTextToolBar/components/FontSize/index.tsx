@@ -7,31 +7,31 @@ import styleText from '../../styles/ToolsPopover.css?inline';
 
 const list = [
   {
-    value: '1',
+    value: '12px',
     label: '12px',
   },
   {
-    value: '2',
-    label: '13px',
+    value: '14px',
+    label: '14px',
   },
   {
-    value: '3',
+    value: '16px',
     label: '16px',
   },
   {
-    value: '4',
+    value: '18px',
     label: '18px',
   },
   {
-    value: '5',
+    value: '24px',
     label: '24px',
   },
   {
-    value: '6',
+    value: '32px',
     label: '32px',
   },
   {
-    value: '7',
+    value: '48px',
     label: '48px',
   },
 ];
@@ -44,9 +44,20 @@ export interface FontSizeProps {
 export function FontSize(props: FontSizeProps) {
   const { execCommand } = props;
   const [visible, setVisible] = React.useState(false);
-
   const onChange = useCallback((val: string) => {
-    execCommand('fontSize', val);
+    // console.log('fontSize', val);
+    // const selectionObj = window.getSelection();
+    // const selectedText = selectionObj.toString();
+    // const rangeObj = selectionObj.getRangeAt(0);
+    // const docFragment = rangeObj.cloneContents();
+    // const tempDiv = document.createElement("div");
+    // tempDiv.appendChild(docFragment);
+    // const selectedHtml = tempDiv.innerHTML;
+    // console.log(selectionObj, selectedText, rangeObj, docFragment, selectedHtml);
+
+    // insertHTML
+    // execCommand('insertHTML', `<span style="font-size: ${val}">${selectedText}<span>`);
+    // execCommand('fontSize', val);
     setVisible(false);
   }, [execCommand]);
 

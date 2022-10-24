@@ -124,15 +124,15 @@ export function Tools(props: ToolsProps) {
       >
         <BasicTools />
 
-        {mergeTags && (
+        {/* {mergeTags && (
           <MergeTags
             execCommand={execCommand}
             getPopupContainer={getPopoverMountNode}
           />
         )}
         <div className='easy-email-extensions-divider' />
-        <div className='easy-email-extensions-divider' />
-        <FontFamily
+        <div className='easy-email-extensions-divider' /> */}
+        {/* <FontFamily
           execCommand={execCommand}
           getPopupContainer={getPopoverMountNode}
         />
@@ -145,7 +145,7 @@ export function Tools(props: ToolsProps) {
         <Bold
           currentRange={selectionRange}
           onChange={() => execCommandWithRange('bold')}
-        />
+        /> */}
         <div className='easy-email-extensions-divider' />
         <Italic
           currentRange={selectionRange}
@@ -162,11 +162,11 @@ export function Tools(props: ToolsProps) {
           onChange={() => execCommandWithRange('underline')}
         />
         <div className='easy-email-extensions-divider' />
-        <IconFontColor
+        {/* <IconFontColor
           selectionRange={selectionRange}
           execCommand={execCommand}
           getPopoverMountNode={getPopoverMountNode}
-        />
+        /> */}
         <div className='easy-email-extensions-divider' />
         <IconBgColor
           selectionRange={selectionRange}

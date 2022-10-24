@@ -6,21 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="铂英飞" />
   <%- buildTime %>
-    <title>铂英飞</title>
-    <!-- Google Tag Manager -->
-    <!-- <script>
-      (function (w, d, s, l, i) {
-        w[l] = w[l] || [];
-        w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
-        var f = d.getElementsByTagName(s)[0],
-          j = d.createElement(s),
-          dl = l != 'dataLayer' ? '&l=' + l : '';
-        j.async = true;
-        j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
-        f.parentNode.insertBefore(j, f);
-      })(window, document, 'script', 'dataLayer', 'GTM-N6T7TGX');
-    </script> -->
-    <!-- End Google Tag Manager -->
+    <title>模板编辑器-铂英飞</title>
 </head>
 
 <body style="height: 100vh; overflow: hidden;">
@@ -32,7 +18,7 @@
           align-items: center;
           justify-content: center;
         ">
-      <img width="200px" src="https://assets.maocanhua.cn/Fj1gmWbF-aY3ZnPyrTrDge6atRnm" alt="" />
+      <img width="150px" src="/images/Fj1gmWbF-aY3ZnPyrTrDge6atRnm.svg" alt="" />
       <p style="font-size: 24px; color: rgba(0, 0, 0, 0.65)">
         Please wait a moment.
       </p>
@@ -40,5 +26,32 @@
   </div>
   <script type="module" src="/src/main.tsx"></script>
 </body>
+<script>
+  function textInit(e) {
+    console.log(e)
+    e.preventDefault();
+    var text;
+    var clp = (e.originalEvent || e).clipboardData;
+    if (clp === undefined || clp === null) {
+      text = window.clipboardData.getData("text") || "";
+      if (text !== "") {
+        if (window.getSelection) {
+          var newNode = document.createElement("span");
+          newNode.innerHTML = text;
+          window.getSelection().getRangeAt(0).insertNode(newNode);
+        } else {
+          document.selection.createRange().pasteHTML(text);
+        }
+      }
+    } else {
+      text = clp.getData('text/plain') || "";
+      if (text !== "") {
+        document.execCommand('insertText', false, text);
+      }
+    }
+    console.log(text)
+  }
+  window.document.addEventListener('paste', textInit)
+</script>
 
 </html>

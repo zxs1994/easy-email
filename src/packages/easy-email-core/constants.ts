@@ -1,4 +1,4 @@
-export type BlockType = BasicType;
+export type BlockType = BasicType
 
 // 基础组件
 export enum BasicType {
@@ -46,5 +46,5 @@ export enum AdvancedType {
   HERO = 'advanced_hero',
 }
 
-export const MERGE_TAG_CLASS_NAME = 'easy-email-merge-tag-container';
-export const EMAIL_BLOCK_CLASS_NAME = 'email-block';
+export const MERGE_TAG_CLASS_NAME = 'easy-email-merge-tag-container'
+export const EMAIL_BLOCK_CLASS_NAME = 'email-block'

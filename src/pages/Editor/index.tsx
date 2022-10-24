@@ -4,7 +4,7 @@ import { useDispatch } from 'react-redux';
 import template from '@demo/store/template';
 import { useAppSelector } from '@demo/hooks/useAppSelector';
 import { useLoading } from '@demo/hooks/useLoading';
-import { Button, Message, PageHeader, Select } from '@arco-design/web-react';
+import { Button, Message, Modal, PageHeader, Select } from '@arco-design/web-react';
 import { useQuery } from '@demo/hooks/useQuery';
 import { useHistory } from 'react-router-dom';
 import { cloneDeep, set, isEqual } from 'lodash';
@@ -19,14 +19,9 @@ import {
   EmailEditor,
   EmailEditorProvider,
   EmailEditorProviderProps,
+  IEmailTemplate,
 } from 'easy-email-editor';
 import { IPage } from 'easy-email-core';
-export interface IEmailTemplate {
-  content: IPage;
-  subject: string;
-  subTitle: string;
-  templateId: string;
-}
 import { Stack } from '@demo/components/Stack';
 // import { pushEvent } from '@demo/utils/pushEvent';
 import { FormApi } from 'final-form';
@@ -41,7 +36,7 @@ import {
   JsonToMjml,
 } from 'easy-email-core';
 import { BlockMarketManager, StandardLayout } from 'easy-email-extensions';
-import { AutoSaveAndRestoreEmail } from '@demo/components/AutoSaveAndRestoreEmail';
+// import { AutoSaveAndRestoreEmail } from '@demo/components/AutoSaveAndRestoreEmail';
 
 // Register external blocks
 import './components/CustomBlocks';
@@ -56,8 +51,10 @@ import { testMergeTags } from './testMergeTags';
 import { useMergeTagsModal } from './components/useMergeTagsModal';
 
 import { useWindowSize } from 'react-use';
-import { article } from '../../services/article';
-import { json } from 'stream/consumers';
+// import { article } from '../../services/article';
+// import { json } from 'stream/consumers';
+import dayjs from 'dayjs';
+import { replaceUrl } from '@demo/utils/utils';
 
 const socialIcons = [
   {
@@ -178,9 +175,25 @@ export default function Editor() {
 
   const { openModal, modal } = useEmailModal();
 
-  const { id, type, token, perationtype } = useQuery();
-
-  const loading = useLoading(template.loadings.fetchById);
+  const { templateId, from, token, phone } = useQuery();
+  if (token) {
+    localStorage.setItem('token', token);
+    localStorage.setItem('phone', phone);
+    replaceUrl({
+      token: null,
+      phone: null,
+    });
+  }
+  const phoneList = [
+    '18621735062',
+    '18621175980',
+    '15255187434',
+    '17621923695',
+    '13916683134',
+    '15316122802',
+  ];
+  const isSystemUser = phoneList.includes(localStorage.getItem('phone') || '');
+  const loading = useLoading(template.loadings.fetchByTemplateId);
   const {
     modal: mergeTagsModal,
     openModal: openMergeTagsModal,
@@ -191,6 +204,7 @@ export default function Editor() {
   const isSubmitting = useLoading([
     template.loadings.create,
     template.loadings.updateById,
+    template.loadings.saveCopyAs
   ]);
 
   useEffect(() => {
@@ -204,10 +218,9 @@ export default function Editor() {
 
   // 渲染模板内容
   useEffect(() => {
-    // id 模板id
-    if (token) { localStorage.setItem('token', token); }
-    if (id) {
-      dispatch(template.actions.fetchById({ id, type }));
+    // templateId 模板id
+    if (templateId) {
+      dispatch(template.actions.fetchByTemplateId({ templateId }));
     } else {
       dispatch(template.actions.fetchDefaultTemplate(undefined));
     }
@@ -215,7 +228,7 @@ export default function Editor() {
     return () => {
       dispatch(template.actions.set(null));
     };
-  }, [dispatch, id, type]);
+  }, [dispatch, templateId]);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -263,23 +276,24 @@ export default function Editor() {
         validationLevel: 'soft',
       },
     ).html;
-    // const saveData = (() => {
-    //   var a = document.createElement("a");
-    //   document.body.appendChild(a);
-    //   // a.style = "display: none";
-    //   return function (data, fileName) {
-    //     const json = data,
-    //       blob = new Blob([json], { type: "octet/stream" }),
-    //       url = window.URL.createObjectURL(blob);
-    //     a.href = url;
-    //     a.download = fileName;
-    //     a.click();
-    //     window.URL.revokeObjectURL(url);
-    //   };
-    // })();
-    // saveData(html, '落地页.html');
+    const saveData = (() => {
+      var a = document.createElement("a");
+      document.body.appendChild(a);
+      // a.style = "display: none";
+      return function (data, fileName) {
+        const json = data,
+          blob = new Blob([json], { type: "octet/stream" }),
+          url = window.URL.createObjectURL(blob);
+        a.href = url;
+        a.download = fileName;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      };
+    })();
 
-    // copy(html);
+    saveData(html, dayjs().format('MM-DD') + '.html');
+
+    copy(html);
     Message.success('Copied to pasteboard!');
   };
 
@@ -306,246 +320,127 @@ export default function Editor() {
     };
   }, [templateData]);
 
-  // async function replaceAHref(htmlStr) {
-  //   const dom = new DOMParser().parseFromString(htmlStr, 'text/html');
-  //   const aList = dom.querySelectorAll('a');
-  //   const promiseArr = [];
-  //   for (let i = 0; i < aList.length; i++) {
-  //     let p = api({ url: aList[i].href });
-  //     promiseArr.push(p);
-  //     p.then((res: any) => {
-  //       aList[i].href = res;
-  //     });
-  //   }
-  //   await Promise.all(promiseArr);
-  //   return dom.documentElement.outerHTML;
-  // }
-
-  async function format(info, id) {
-    const promisArr: any[] = [];
-    function recursionReplaceHref(info) {
-      const attributes = info.attributes || {};
-      console.log(attributes.href);
-      if (attributes.href || attributes.href == '') { // 常规替换
-        // console.log(attributes.href);
-        if (attributes.href) {
-          const p = article.getShortUrl({
-            longURL: attributes.href,
-            id,
-            type: 'LANDINGPAGE'
-          });
-          promisArr.push(p);
-          p.then(res => attributes.href = res);
-        }
-      }
-      if (info.type === 'advanced_social') { // 这个类型单独处理
-        const elements = info.data?.value?.elements || [];
-        console.log(2);
-        elements.forEach(i => {
-          const p = article.getShortUrl({
-            longURL: i.href,
-            id,
-            type: 'LANDINGPAGE'
-          });
-          promisArr.push(p);
-          p.then(res => i.href = res);
-        });
-      }
-      if (/text/.test(info.type)) { // text里面可能会有a标签
-        let content = info.data?.value?.content || '';
-        const urlList = content.match(/(?<=href=")http[s?]\:\/\/\S+(?=")/igm); // null 或 数组
-        // console.log(urlList)
-        if (!urlList) return;
-        const promisArr1: any[] = [];
-        urlList.forEach((v, i) => {
-          const p = article.getShortUrl({
-            longURL: v,
-            id,
-            type: 'LANDINGPAGE'
-          });
-          promisArr.push(p);
-          promisArr1.push(p);
-        });
-        Promise.all(promisArr1).then(res => { // Promise.all 会保证顺序, 数组的顺序
-          const newUrlList = res.map(i => i.url);
-          // console.log(newUrlList)
-          // 根据链接分割成数组, 每一项后加加上替换好的链接, 再转成字符串
-          info.data.value.content = content.split(/(?<=href=")http[s?]\:\/\/\S+(?=")/igm).map((val, idx) => val + newUrlList[idx] || '').join('');
-        });
-      }
-      if (info.children && info.children.length) { // 递归
-        info.children.forEach(i => {
-          recursionReplaceHref(i);
-        });
-      }
-    };
-    recursionReplaceHref(info);
-    await Promise.all(promisArr);
-    return info;
-  }
-
   console.log(initialValues);
-  // // 链接替换
-  // const api = async function (href) {
-  //   return new Promise((resole, reject) => {
-  //     request.get(`/api/v2/dtc/easy-mail/getShortUrl?longURL=${href}`).then((res: any) => {
-  //       if (res.result.code === 200) {
-  //         resole(res.result.data);
-  //       } else {
-  //         alert(res.result.msg + href);
-  //         reject();
-  //       }
-  //     }).catch(res => {
-  //       resole('123');
-  //     });
-  //   });
-  //   // return ;
-  // };
-  // 引用   referencetype  copy  另存为    reference 引用
-  const reference = async (values, referencetype) => {
-    const con = confirm('确认保存主题？');
-    if (con == true) {
-      let content = JSON.parse(JSON.stringify(values.content));
-      let landingPageId = (await article.getId()).result;
-      format(content, landingPageId).then(data => {
-        // mjml
-        values.mjml = JsonToMjml({
-          data,
-          mode: 'production',
-          context: values.content,
-          dataSource: mergeTags,
-        });
-        // html
-        values.html = mjml(
-          JsonToMjml({
-            data,
-            mode: 'production',
-            context: values.content,
-            dataSource: mergeTags,
-          }),
-          {
-            beautify: true,
-            validationLevel: 'soft',
-          },
-        ).html;
-
-        let html = window.btoa(unescape(encodeURIComponent(values.html)));
-        let mj = window.btoa(unescape(encodeURIComponent(values.mjml)));
-        let b = {
-          // picture,
-          summary: values.subTitle,
-          title: values.subject,
-          content: JSON.stringify(values.content),
-          html,
-          mjml: mj,
-          originalLandingPageId: id,
-          landingPageId,
-        };
-        // 两种类型不同的添加
-        if (referencetype == 'reference') {
-          // 推荐主题
-          article.addLandingPage(b).then((res: any) => {
-            if (res.code === 0) {
-              Message.success('引用成功!');
-              history.replace(`/?id=${res.result.templateId}&type=1`);
-            } else {
-              alert(res.msg);
-            }
-          });
-        } else {
-          // 我的主题
-          article.saveAsLandingPage(b).then((res: any) => {
-            if (res.code === 0) {
-              Message.success('存储成功!');
-              history.replace(`/?id=${res.result.templateId}&type=${type}`);
-            } else {
-              alert(res.msg);
-            }
-          });
-        }
-
-      });
-    }
-  };
 
   // 保存
-  const onSubmit = useCallback(
-    async (
-      values,
-      form: FormApi<IEmailTemplate, Partial<IEmailTemplate>>,
-    ) => {
-      const con = confirm('确认保存主题？');
-      let content = JSON.parse(JSON.stringify(values.content));
-      let landingPageId;
-      if (!id) {
-        landingPageId = (await article.getId()).result;
-      }
-      if (con == true) {
-        format(content, landingPageId).then(data => {
-          // mjml
-          values.mjml = JsonToMjml({
-            data,
-            mode: 'production',
-            context: values.content,
-            dataSource: mergeTags,
-          });
-          // html
-          values.html = mjml(
-            JsonToMjml({
-              data,
-              mode: 'production',
-              context: values.content,
-              dataSource: mergeTags,
-            }),
-            {
-              beautify: true,
-              validationLevel: 'soft',
+  // const onSubmit = useCallback(
+  //   async (
+  //     values: IEmailTemplate,
+  //     form: FormApi<IEmailTemplate, Partial<IEmailTemplate>>,
+  //   ) => {
+  //     Modal.info({
+  //       title: `确认保存?`,
+  //       content: type === 'my' ? '我的模板保存后会提交审核, 审核通过后才可以发送邮件' : '作为系统模板',
+  //       onOk() {
+  //         if (templateId) {
+  //           // 修改
+  //           console.log(templateId);
+  //           dispatch(
+  //             template.actions.updateById({
+  //               templateId,
+  //               from: from,
+  //               template: values,
+  //               success() {
+  //                 Message.success('修改成功!');
+  //                 // form.restart(values);
+  //               },
+  //             }),
+  //           );
+  //         } else {
+  //           // 新增
+  //           dispatch(
+  //             template.actions.create({
+  //               template: values,
+  //               type,
+  //               success(templateId, newTemplate) {
+  //                 Message.success('保存成功!');
+  //                 // form.restart(newTemplate);
+  //                 history.replace(`/?templateId=${templateId}&from=${type}`);
+  //               },
+  //             }),
+  //           );
+  //         }
+  //       },
+  //     });
+  //   },
+  //   [dispatch, history, type, templateId, initialValues],
+  // );
+
+  // 保存修改
+  const edit = async (values: IEmailTemplate) => {
+    let message = '';
+    if (from === 'system') {
+      message = '保存系统模板的修改';
+    } else if (from === 'my') {
+      message = '保存我的模板的修改, 再次提交审核';
+    }
+
+    Modal.info({
+      title: `确认保存修改?`,
+      content: message,
+      onOk() {
+        console.log(templateId);
+        dispatch(
+          template.actions.updateById({
+            templateId,
+            from: from,
+            template: values,
+            success() {
+              Message.success('修改成功!');
+              // form.restart(values);
             },
-          ).html;
-
-          if (id) {
-            // 修改
-            console.log(id);
-            dispatch(
-              template.actions.updateById({
-                id,
-                type,
-                template: values,
-                success() {
-                  Message.success('修改成功!');
-                  form.restart(values);
-                },
-              }),
-            );
-          } else {
-            // 新增
-            dispatch(
-              template.actions.create({
-                template: values,
-                type,
-                landingPageId,
-                success(id, newTemplate) {
-                  Message.success('保存成功!');
-                  form.restart(newTemplate);
-                  history.replace(`/?id=${id}&type=${type}`);
-                },
-              }),
-            );
-          }
-        });
+          }),
+        );
+      },
+    });
+  };
+  // 新建模板
+  const create = async (values: IEmailTemplate, type) => {
+    let message = '';
+    if (type === 'my') {
+      message = '我的模板保存后会提交审核, 审核通过后才可以发送邮件';
+    } else if (type === 'system') {
+      message = '作为新的系统模板';
+    }
+    Modal.info({
+      title: `确认新建模板?`,
+      content: message,
+      onOk() {
+        // 新增
+        dispatch(
+          template.actions.create({
+            template: values,
+            type,
+            success(templateId, newTemplate) {
+              Message.success('新建成功!');
+              // form.restart(newTemplate);
+              history.replace(`/?templateId=${templateId}&from=${type}`);
+            },
+          }),
+        );
       }
-
-
-      // console.log(values);
-
-
-      // pushEvent({ event: 'EmailSave' });
-
-
-    },
-    [dispatch, history, type, id, initialValues],
-  );
-
+    });
+  };
+  // 另存为我的模板
+  const saveCopyAs = async (values: IEmailTemplate) => {
+    Modal.info({
+      title: `另存为我的模板?`,
+      content: '另存为我的模板后会提交审核, 审核通过后才可以发送邮件',
+      onOk() {
+        dispatch(
+          template.actions.saveCopyAs({
+            originalLandingPageId: templateId,
+            template: values,
+            success(templateId, newTemplate) {
+              Message.success('新建成功!');
+              // form.restart(newTemplate);
+              history.replace(`/?templateId=${templateId}&from=my`);
+            },
+          })
+        );
+      }
+    });
+  };
   const onBeforePreview: EmailEditorProviderProps['onBeforePreview'] = useCallback(
     (html: string, mergeTags) => {
       const engine = new Liquid();
@@ -575,7 +470,7 @@ export default function Editor() {
     <div>
       <style>{themeStyleText}</style>
       <EmailEditorProvider
-        key={id}
+        key={templateId}
         height={'calc(100vh - 65px)'}
         data={initialValues}
         // interactiveStyle={{
@@ -586,7 +481,7 @@ export default function Editor() {
         // onRemoveCollection={({ id }) => removeCollection(id)}
         onUploadImage={onUploadImage}
         fontList={fontList}
-        onSubmit={onSubmit}
+        // onSubmit={onSubmit}
         onChangeMergeTag={onChangeMergeTag}
         autoComplete
         enabledLogic
@@ -629,45 +524,19 @@ export default function Editor() {
 
                     <Button onClick={() => onExportMJML(values)}>Export MJML</Button>
 
-                    <Button onClick={() => onExportHtml(values)}>保存</Button>
-*/}
+                  */}
                     {/* <Button onClick={() => reference(values, 'reference')} style={{ display: type == 2 ? '' : 'none' }}>
                       引用
                     </Button> */}
-                    {/* perationtype check 查看按钮
+                    {/* operationtype check 查看按钮
                         type  1  我的主题   2 推荐主题
-                    */}
-                    <Button onClick={() => reference(values, 'copy')} style={{ display: (perationtype == 'check') && (type == 1) ? '' : 'none' }}>
-                      另存为
-                    </Button>
-                    <Button onClick={() => reference(values, 'copy')} style={{ display: (perationtype == 'check') && (type == 2) ? '' : 'none' }}>
-                      引用
-                    </Button>
-                    <Button style={{ display: perationtype != 'check' ? '' : 'none' }}
-                      loading={isSubmitting}
-                      type='primary'
-                      onClick={() => submit()}
-                    >
-                      保存
-                    </Button>
-                    {/* <a
-                      target='_blank'
-                      href='https://github.com/m-Ryan/easy-email'
-                      style={{
-                        color: '#000',
-                        fontSize: 28,
-                        width: 33,
-                        height: 33,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        backgroundColor: '#fff',
-                        borderRadius: '50%',
-                      }}
-                      onClick={() => pushEvent({ event: 'Github' })}
-                    >
-                      <IconGithub />
-                    </a> */}
+                      */}
+                    <Button onClick={() => onExportHtml(values)}>Export HTML</Button>
+                    {!templateId ? <Button loading={isSubmitting} type='primary' onClick={() => create(values, 'my')}>新建我的模板</Button> : undefined}
+                    {(!templateId && isSystemUser) ? <Button loading={isSubmitting} type='primary' onClick={() => create(values, 'system')}>新建系统模板</Button> : undefined}
+
+                    {templateId ? <Button loading={isSubmitting} type='primary' onClick={() => saveCopyAs(values)}>另存为我的模板</Button> : undefined}
+                    {(templateId && (from === 'my' || isSystemUser)) ? <Button loading={isSubmitting} type='primary' onClick={() => edit(values)}>保存修改</Button> : undefined}
                   </Stack>
                 }
               />
