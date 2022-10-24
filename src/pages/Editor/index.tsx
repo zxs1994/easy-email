@@ -175,24 +175,16 @@ export default function Editor() {
 
   const { openModal, modal } = useEmailModal();
 
-  const { templateId, from, token, phone } = useQuery();
+  const { templateId, from, token, userRole } = useQuery();
   if (token) {
     localStorage.setItem('token', token);
-    localStorage.setItem('phone', phone);
+    localStorage.setItem('userRole', userRole);
     replaceUrl({
       token: null,
-      phone: null,
+      userRole: null,
     });
   }
-  const phoneList = [
-    '18621735062',
-    '18621175980',
-    '15255187434',
-    '17621923695',
-    '13916683134',
-    '15316122802',
-  ];
-  const isSystemUser = phoneList.includes(localStorage.getItem('phone') || '');
+  const isSystemUser = localStorage.getItem('userRole') === 'systemUser';
   const loading = useLoading(template.loadings.fetchByTemplateId);
   const {
     modal: mergeTagsModal,
@@ -528,12 +520,9 @@ export default function Editor() {
                     {/* <Button onClick={() => reference(values, 'reference')} style={{ display: type == 2 ? '' : 'none' }}>
                       引用
                     </Button> */}
-                    {/* operationtype check 查看按钮
-                        type  1  我的主题   2 推荐主题
-                      */}
                     <Button onClick={() => onExportHtml(values)}>Export HTML</Button>
                     {!templateId ? <Button loading={isSubmitting} type='primary' onClick={() => create(values, 'my')}>新建我的模板</Button> : undefined}
-                    {(!templateId && isSystemUser) ? <Button loading={isSubmitting} type='primary' onClick={() => create(values, 'system')}>新建系统模板</Button> : undefined}
+                    {(!templateId && isSystemUser && from !== 'my') ? <Button loading={isSubmitting} type='primary' onClick={() => create(values, 'system')}>新建系统模板</Button> : undefined}
 
                     {templateId ? <Button loading={isSubmitting} type='primary' onClick={() => saveCopyAs(values)}>另存为我的模板</Button> : undefined}
                     {(templateId && (from === 'my' || isSystemUser)) ? <Button loading={isSubmitting} type='primary' onClick={() => edit(values)}>保存修改</Button> : undefined}
