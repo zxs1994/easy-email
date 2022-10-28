@@ -10,14 +10,17 @@ export async function emailToImage(html: string) {
   container.innerHTML = html
   document.body.appendChild(container)
   const blob = await new Promise<any>(resolve => {
-    html2canvas(container, { useCORS: true }).then(
-      canvas => canvas.toBlob(resolve, 'png', 0.1)
-      // resolve(canvas.toDataURL('image/png'))
-    )
+    html2canvas(container, {
+      useCORS: true,
+      height: 1200,
+    }).then(canvas => {
+      // console.log(canvas)
+      canvas.toBlob(resolve, 'png', 0.1)
+    })
   })
 
   document.body.removeChild(container)
-
+  // open(window.URL.createObjectURL(blob))
   try {
     const picture = await services.common.uploadByQiniu(blob)
     console.log(picture)

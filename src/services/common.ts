@@ -3,7 +3,7 @@ import { request } from './axios.config'
 const CLOUDINARY_URL = '/api/v2/dtc/schedule/systemUploadPic' //图片上传地址
 
 export const common = {
-  async uploadByQiniu(file: File | Blob): Promise<string> {
+  async uploadByQiniu(file: File): Promise<string> {
     console.log(file)
     const data = new FormData()
     data.append('uploadPic', file)

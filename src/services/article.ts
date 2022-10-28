@@ -74,12 +74,16 @@ export const article = {
     longURL: string
     id: string
     type: string
-  }): Promise<any> {
-    return (
-      await request.get<any>('/api/v2/dtc/easy-mail/getShortUrl', {
-        params: data,
-      })
-    ).result.data
+  }): Promise<string> {
+    try {
+      return (
+        await request.get<any>('/api/v2/dtc/easy-mail/getShortUrl', {
+          params: data,
+        })
+      ).result.data
+    } catch (e) {
+      return data.longURL
+    }
   },
 
   // 获取id
